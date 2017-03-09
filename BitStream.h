@@ -55,6 +55,8 @@ typedef struct BitStream {
 
 BitStream* BitStreamCreate(uint16_t nbits) ;
 
+BitStream* BitStreamCreateAscii(const char* s) ;
+
 void BitStreamDelete(BitStream* bs) ;
 
 void BitStreamShow(BitStream* bs) ;
@@ -69,4 +71,5 @@ uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) ;
 
 uint16_t BitStreamFillAscii(BitStream* bs, const char* inp) ;
 
+BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) ;
 #endif /* _BITSTREAM_H */

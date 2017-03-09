@@ -6,6 +6,7 @@
  * @author Makarand Kulkarni
  * 
  * @internal BitStreamCreate
+ * 	     BitStreamCreateAscii
  *           BitStreamDelete
  *           BitStreamRealloc
  *           BitStreamShow
@@ -15,6 +16,8 @@
  *           BitStreamGetBits
  *	     BitStreamFill
  *	     BitStreamFillAscii
+ *	     BitStreamHex2Base64
+ *	     BitStreamExclusiveOr
  *
  * Copyright (c) 2017, Makarand Kulkarni under GPLv3 License
  */
@@ -119,6 +122,28 @@ BitStream* BitStreamCreate(uint16_t nbits) {
 
 /**
  * @ingroup Bitstream
+ * @fn BitStream* BitStreamCreateAscii(const char* s)
+ * @brief Creates a object of type BitStream and allocates space to hold the
+ * 	ASCII byte array passed as argument
+ *
+ * @param [in] s\n
+ * 	ASCII buffer that is filled in the newly allocated BitStream
+ * @returns pointer to newly created bit stream object, NULL on failure
+ */
+BitStream* BitStreamCreateAscii(const char* s) {
+   BitStream* bs = NULL;
+
+   bs = BitStreamCreate(0); /* Empty container */
+
+   if (BitStreamFillAscii(bs, s) <= 0) {
+	   BitStreamDelete(bs);
+	   bs = NULL;
+   }
+   return bs;
+}
+
+/**
+ * @ingroup Bitstream
  *
  * @fn BitStreamRealloc(BitStream* bs, uint8_t buffer, uint16_t nbits) 
  *
@@ -151,7 +176,8 @@ void BitStreamRealloc(BitStream* bs, uint8_t *buffer, uint16_t nbits) {
 	    }
 	 }
       } else {
-	 bs->array = buffer;
+	 bs->array = buffer ? buffer : (uint8_t *)
+		 malloc((nbits + BITS_PER_BYTE - 1)/ BITS_PER_BYTE);
       }
       bs->nbits = nbits;
    }
@@ -198,6 +224,7 @@ void BitStreamShow(BitStream* bs) {
 		 printf("\n%03d\t", i);
          printf("%02x ", bs->array[i]);
       }
+      printf("\n");
    } else {
       printf("NULL!\n");
    }
@@ -388,3 +415,48 @@ uint16_t BitStreamFillAscii(BitStream* bs, const char* inp) {
  * return out;
  * }
  */
+
+
+/**
+ * @ingroup BitStream
+ * @fn BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) 
+ *
+ * @brief Performs exclusive OR of bitstream bx against bitstream by and returns
+ *	bitstream bz
+ *
+ * If the size of bx is larger than size of by, by rolls over to continue xor
+ * operation. The routine allocates a new object of type BitStream and returns
+ * pointer to the same
+ *
+ * @param [in] *bx\n
+ *   	Bitstream x
+ * @param [in] *by\n
+ *   	Bitstream y
+ * @returns Pointer to object of type BitStream holding the result of xor 
+ * 	operation explained above
+ * TODO: roll over as mentioned above is not yet implemented 
+ */
+BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) {
+   BitStream* bz = NULL;
+
+   uint16_t offsetx, offsety;
+   uint8_t bytex, bytey;
+
+   offsetx = 0;
+   offsety = 0;
+
+   if (bx && by) {
+      bz = BitStreamCreate(bx->nbits);
+      if (bz) {
+         while (BitStreamGetByte(bx, &bytex, offsetx, BITS_PER_BYTE) > 0) {
+            if (BitStreamGetByte(by, &bytey, offsety, BITS_PER_BYTE) > 0) {
+               BitStreamPutByte(bz, bytex^bytey, offsetx, BITS_PER_BYTE);
+            }
+	    offsetx += BITS_PER_BYTE;
+	    offsety += BITS_PER_BYTE;
+         }
+      }
+   }
+   return bz;
+}
+

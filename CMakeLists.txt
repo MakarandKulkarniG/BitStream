@@ -1,4 +1,7 @@
-project("hex2base64 conversion")
+project("cryptopals challenge")
 
 add_executable(hex2base64 hex2base64.c
+	BitStream.c)
+
+add_executable(xor xor.c
 	BitStream.c)

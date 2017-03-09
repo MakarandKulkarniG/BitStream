@@ -22,16 +22,11 @@
  *    
  */
 int main() {
-   char* hexbuf    = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
+   BitStream* bs   = NULL;
    uint16_t offset = 0;
    uint8_t byte    = 0;
-   BitStream* bs   = NULL;
 
-   uint16_t size = (strlen(hexbuf) + 1) > 1;
-
-   bs = BitStreamCreate(size * BITS_PER_BYTE);
-
-   if (BitStreamFillAscii(bs, hexbuf) > 0) {
+   if ((bs = BitStreamCreateAscii("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")) != NULL) {
       while (BitStreamGetByte(bs, &byte, offset, 6) > 0) {
    	   switch (byte) {
    	   case 0 ... 25:
