@@ -41,7 +41,7 @@ int main() {
    		   printf("%c", 'a'+(byte-26));
    		   break;
    	   case 52 ... 61:
-   		   printf("%c", '1'+(byte-52));
+   		   printf("%c", '0'+(byte-52));
    		   break;
    	   case 62: 
    		   printf("+");
@@ -50,10 +50,11 @@ int main() {
    		   printf("/");
    		   break;
    	   default: 
-   		   printf("*");
+   		   printf("?");
    	   }
    	   offset += 6;
       }
    }
+   printf("\n");
    return 0;
 }

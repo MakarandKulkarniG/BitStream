@@ -24,7 +24,7 @@
  * @def MIN
  * @brief Returns mininum of given 2 quantities
  */
-#define MIN(a,b)	(a < b ? a : b)
+#define MIN(a,b)	((a) < (b) ? (a) : (b))
 
 /**
  * @def DECL_BYTE_OFFSET

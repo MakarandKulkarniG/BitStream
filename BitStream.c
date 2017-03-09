@@ -101,8 +101,7 @@ BitStream* BitStreamCreate(uint16_t nbits) {
    if (bs != NULL) { 
 
       if (nbits) {
-        bs->array = (uint8_t *)calloc((nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE,
-			sizeof(uint8_t));
+        bs->array = (uint8_t *)malloc((nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE);
         if (NULL == bs->array) {
           free(bs);
           bs = NULL;
