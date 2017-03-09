@@ -6,8 +6,10 @@
 #if !defined(_BITSTREAM_H)
 #define _BITSTREAM_H
 
-#include <stdlib.h>
+#include <assert.h>
+#include <ctype.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -50,5 +52,21 @@ typedef struct BitStream {
    uint16_t	nbits;
 } BitStream;
 
+
+BitStream* BitStreamCreate(uint16_t nbits) ;
+
+void BitStreamDelete(BitStream* bs) ;
+
+void BitStreamShow(BitStream* bs) ;
+
+uint16_t BitStreamPutByte(BitStream* bs, uint8_t byte, uint16_t offset, 
+	uint16_t nbits) ;
+
+uint16_t BitStreamGetByte(BitStream *bs, uint8_t *byte, uint16_t offset, 
+		uint16_t nbits) ;
+
+uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) ;
+
+uint16_t BitStreamFillAscii(BitStream* bs, const char* inp) ;
 
 #endif /* _BITSTREAM_H */

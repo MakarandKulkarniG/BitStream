@@ -1,13 +1,20 @@
 /**
  * @file BitStream.c
+ *
  * @brief Implements the routines for bitstream manipulation
+ * 
  * @author Makarand Kulkarni
- * @internal BitStreamShow
- *           BitStreamCreate
+ * 
+ * @internal BitStreamCreate
  *           BitStreamDelete
+ *           BitStreamRealloc
+ *           BitStreamShow
  *           BitStreamPutByte
  *           BitStreamGetByte
+ *           BitStreamPutBits
+ *           BitStreamGetBits
  *	     BitStreamFill
+ *	     BitStreamFillAscii
  *
  * Copyright (c) 2017, Makarand Kulkarni under GPLv3 License
  */
@@ -15,47 +22,142 @@
 #include "BitStream.h"
 
 /**
- * @ingroup BitStream
- * @fn void BitSreamShow(BitStream* bs, const char* fmt)
- * @brief Show contents of bit stream as hex array
+ * @fn unsigned char xtoi(char c)
  *
- * @param [in]	bs\n
- *  	pointer to bitstream to show
- * @returns void
+ * @brief converts ascii hex character to integer value
+ *
+ * Modelled on lines of atoi :) 
+ * @param [in] c\n
+ * 	valid hex character, [A-F],[a-f],[0-9], illegal hex will throw assert!
+ * 	unfortunately there are no Exceptions!
+ *
+ * @returns \n
+ * 	Integer value of corresponding ascii hex character
  */
-void BitStreamShow(BitStream* bs) {
-   uint16_t i;
-   if (bs != NULL && bs->array != NULL) {
-      for (i = 0; i < (bs->nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE; i++)
-         printf("%02x ", bs->array[i]);
-   }
+static inline unsigned char xtoi(char c) {
+      unsigned char ll;
+      if (c >= '0' && c <= '9')
+             ll = c - '0';
+      else if (c >= 'a' && c <= 'f')
+            ll = c - 'a' + 10;
+      else if (c >= 'A' && c <- 'F')
+            ll = c - 'A' + 10;
+      else 
+            assert(0);
+       return ll;
 }
 
+/**
+ * @fn int32_t strtox(const char* in, uint8_t *out, uint16_t size)
+ *
+ * @brief Convert HEX ascii string into byte array of integers
+ * THe string has to be terminated by '\0' character, else the result is not
+ * guaranteed
+ * Routine does not take care of overflow cases in output buffer if not
+ * allocated properly
+ *
+ * @param [in] in\n
+ * 	pointer to the string containing HEX ascii characters
+ * @param [out] out\n
+ * 	pre-allocated byte buffer to hold the converted values
+ * @param [in] size\n
+ * 	size of the output buffer
+ *
+ * @returns number of bytes converted (1 converted byte = 2 HEX ascii chars)
+ */
+static inline int32_t strtox(const char* in, uint8_t *out, uint16_t size) {
+    short len = strlen(in);
+    short i = 0, j   = 0;
+
+    if (len % 2) {
+       i = 1;
+       out[j++] = xtoi(in[0]) ;
+    }
+    while (i < len) {
+        char ll = xtoi(in[i]);
+        char uu = xtoi(in[i+1]);
+        out[j++] = ll << 4 | uu;
+
+        if (j >= size) 
+            return (-1);
+        i += 2;
+    }
+    return j;
+}
+ 
 /**
  * @ingroup Bitstream
  * @fn BitStream* BitStreamCreate(uint16_t nbits)
  * @brief Creates a object of type BitStream and allocates space to hold nbits
  *
  * @param [in] nbits\n
- * 	number of bits to hold in bit stream
+ * 	number of bits to hold in bit stream. If nbits is zero, just a container
+ * 	object is created and new buffer can be added with BitStreamBuffer()
  * @returns pointer to newly created bit stream object, NULL on failure
  */
 BitStream* BitStreamCreate(uint16_t nbits) {
    
    BitStream *bs = (BitStream *)malloc(sizeof(BitStream));
-   if (bs != NULL) {
-      bs->array = (uint8_t *)calloc((nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE,
-    	sizeof(uint8_t));
-      if (NULL == bs->array) {
-         free(bs);
-         bs = NULL;
+   if (bs != NULL) { 
+
+      if (nbits) {
+        bs->array = (uint8_t *)calloc((nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE,
+			sizeof(uint8_t));
+        if (NULL == bs->array) {
+          free(bs);
+          bs = NULL;
+        } else {
+	  memset(bs->array, (nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE, '\0');
+        }
       } else {
-	 memset(bs->array, (nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE, '\0');
-         bs->nbits = nbits;
+	 bs->array = NULL;
       }
    }
+   bs->nbits = nbits;
+
    return bs;
 }
+
+/**
+ * @ingroup Bitstream
+ *
+ * @fn BitStreamRealloc(BitStream* bs, uint8_t buffer, uint16_t nbits) 
+ *
+ * @brief Reinitialize the BitStream buffer to a new one
+ * 	Routine will create a new one with number of bits if not provided
+ * 	else use the buffer provided as param
+ * 	In case there's no new buffer provided, it calls realloc() to adjust
+ * 	the size of the allocated buffer
+ * @param [in] bs\n
+ * 	BitStream object to operate on
+ * @param [in] *buffer\n
+ * 	Buffer pointer to use for reallocation, if NULL, either a new one or 
+ * 	reallocated one will be used
+ * @param [in] nbits\n
+ * 	size in bits of the new buffer
+ * @returns none
+ */
+void BitStreamRealloc(BitStream* bs, uint8_t *buffer, uint16_t nbits) {
+   if (bs) { 
+      if (bs->array) {
+         if (buffer) {
+	    free (bs->array);
+	    bs->array = buffer;
+	 } else {
+            if (nbits) {
+               bs->array = (uint8_t *)realloc(bs->array, 
+			       (nbits + BITS_PER_BYTE - 1)/ BITS_PER_BYTE);
+	    } else {
+	       bs->array = NULL;
+	    }
+	 }
+      } else {
+	 bs->array = buffer;
+      }
+      bs->nbits = nbits;
+   }
+}
+
 
 /**
  * @ingroup BitStream
@@ -73,6 +175,32 @@ void BitStreamDelete(BitStream* bs) {
          free(bs->array);
       }
       free(bs);
+   }
+}
+
+/**
+ * @ingroup BitStream
+ * @fn void BitSreamShow(BitStream* bs, const char* fmt)
+ * @brief Show contents of bit stream as hex array
+ *
+ * @param [in]	bs\n
+ *  	pointer to bitstream to show
+ * @returns void
+ */
+void BitStreamShow(BitStream* bs) {
+   uint16_t i = 0;
+
+   if (bs != NULL && bs->array != NULL) {
+      printf("%03d\t", i);
+      for (i = 0; i < (bs->nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE; i++) {
+         if ((i != 0) && (i % 4 == 0))
+		 printf("  ");
+         if ((i != 0) && (i % 8 == 0))
+		 printf("\n%03d\t", i);
+         printf("%02x ", bs->array[i]);
+      }
+   } else {
+      printf("NULL!\n");
    }
 }
 
@@ -219,47 +347,45 @@ uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) {
    return bitsCopied;
 }
 
+/**
+ * @ingroup BitStream
+ * @fn uint16_t BitStreamFillAscii(BitStream* bs, uint8_t* inp)
+ *
+ * @brief fills the bytes from input HEX ascii buffer into bit stream
+ *
+ * @param [in,out] bs\n
+ * 	bit stream to fill data in
+ * @param [in] *inp\n
+ * 	pointer to the data to be copied
+ * @returns number of bits copied into bit stream
+ */
+uint16_t BitStreamFillAscii(BitStream* bs, const char* inp) {
+   
+   uint16_t size = (strlen(inp) + 1) >> 1;
+
+   if (bs) {
+      BitStreamRealloc(bs, NULL, size * BITS_PER_BYTE);
+
+      strtox(inp, bs->array, size);
+   }
+   return size * BITS_PER_BYTE;
+}
 
 /**
- * Test purposes only, delete later
+ * @ingroup BitStream
+ * @fn BitStream* BitStreamHex2Base64(BitStream *bs) 
+ *
+ * @brief converts input bitstream of HEX ascii characters into Base64 bitstream
+ *
+ * @param [in] *bs\n
+ * 	pointer to HEX ascii bit stream for conversion
+ * @returns pointer to Base64 bit stream converted from input, NULL in case of
+ * 	any error
+ *
+ * BitStream* BitStreamHex2Base64(BitStream *bs) {
+ *
+ * BitStream* out = NULL;
+ *
+ * return out;
+ * }
  */
-int main() {
-   uint16_t offset = 0;
-   uint8_t byte;
-
-   BitStream* bs = BitStreamCreate(24);
-   BitStreamFill(bs, "Man", 24); 
-
-   /*
-   offset += BitStreamPutByte(bs, 19, offset, 6);
-   offset += BitStreamPutByte(bs, 22, offset, 6);
-   offset += BitStreamPutByte(bs, 5, offset, 6);
-   offset += BitStreamPutByte(bs, 46, offset, 6);
-
-   BitStreamShow(bs);
-    */
-
-   while (BitStreamGetByte(bs, &byte, offset, 6) > 0) {
-	   switch (byte) {
-	   case 0 ... 25:
-		   printf("%c", 'A'+byte);
-		   break;
-	   case 26 ... 51:
-		   printf("%c", 'a'+(byte-26));
-		   break;
-	   case 52 ... 61:
-		   printf("%c", '1'+(byte-52));
-		   break;
-	   case 62: 
-		   printf("+");
-		   break;
-	   case 63:
-		   printf("/");
-		   break;
-	   default: 
-		   printf("*");
-	   }
-	   offset += 6;
-   }
-   return 0;
-}
