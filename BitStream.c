@@ -54,7 +54,8 @@ static inline unsigned char xtoi(char c) {
 /**
  * @fn int32_t strtox(const char* in, uint8_t *out, uint16_t size)
  *
- * @brief Convert HEX ascii string into byte array of integers
+ * @brief Convert HEX ascii string into byte array of integers, modeled on 
+ * 	strtoi or strtol
  * THe string has to be terminated by '\0' character, else the result is not
  * guaranteed
  * Routine does not take care of overflow cases in output buffer if not
@@ -87,6 +88,32 @@ static inline int32_t strtox(const char* in, uint8_t *out, uint16_t size) {
         i += 2;
     }
     return j;
+}
+
+/**
+ * @ingroup Bitstream
+ * @fn uint16_t BitStreamGetSizeBits(BitStream* bs)
+ * @brief Get size in bits of the BitStream object 
+ *
+ * @param [in] *bs\n
+ * 	Pointer to bitstream object whose size is to be retrieved
+ * @returns length in BITs of the bit stream
+ */
+inline uint16_t BitStreamGetSizeBits(BitStream *bs) {
+   return bs ? bs->nbits : 0;
+}   
+
+/**
+ * @ingroup Bitstream
+ * @fn uint8_t* BitStreamGetArray(BitStream* bs)
+ * @brief Get the pointer to array holding bitstream
+ *
+ * @param [in] *bs\n
+ * 	Pointer to bitstream object whose size is to be retrieved
+ * @returns pointer to array if valid bitstream, else NULL
+ */
+inline uint8_t* BitStreamGetArray(BitStream *bs) {
+   return bs ? bs->array : NULL;
 }
  
 /**
@@ -508,7 +535,6 @@ BitStream* BitStreamHex2Base64(BitStream *bs) {
  *   	Bitstream y
  * @returns Pointer to object of type BitStream holding the result of xor 
  * 	operation explained above
- * @FIXME: roll over as mentioned above is not yet implemented 
  */
 BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) {
    BitStream* bz = NULL;
@@ -523,16 +549,12 @@ BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) {
       bz = BitStreamCreate(bx->nbits);
       if (bz) {
          while (BitStreamGetByte(bx, &bytex, offsetx, BITS_PER_BYTE) > 0) {
-            /* this can be replaced by BitStreamGetByteCirc
-	     */
-            if (BitStreamGetByte(by, &bytey, offsety, BITS_PER_BYTE) <= 0) {
-		offsety = 0;
-		BitStreamGetByte(by, &bytey, offsety, BITS_PER_BYTE) ;
+            if (BitStreamGetByte(by, &bytey, offsety, BITS_PER_BYTE)) {
+               BitStreamPutByte(bz, bytex^bytey, offsetx, BITS_PER_BYTE);
 	    }
-            BitStreamPutByte(bz, bytex^bytey, offsetx, BITS_PER_BYTE);
-	       
 	    offsetx += BITS_PER_BYTE;
-	    offsety += BITS_PER_BYTE;
+
+	    offsety = (offsety + BITS_PER_BYTE) % by->nbits;
          }
       }
    }

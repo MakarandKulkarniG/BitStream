@@ -53,6 +53,10 @@ typedef struct BitStream {
 } BitStream;
 
 
+uint16_t BitStreamGetSizeBits(BitStream *bs) ;
+
+uint8_t* BitStreamGetArray(BitStream *bs) ;
+
 BitStream* BitStreamCreate(uint16_t nbits) ;
 
 BitStream* BitStreamCreateAscii(const char* s) ;
