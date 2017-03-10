@@ -529,6 +529,9 @@ BitStream* BitStreamHex2Base64(BitStream *bs) {
  * operation. The routine allocates a new object of type BitStream and returns
  * pointer to the same
  *
+ * FIXME: the rollover works good only when the offset is incremented in multi-
+ * 	ples of BITS_PER_BYTE(8) bits otherwise behavior is unspecified
+ *
  * @param [in] *bx\n
  *   	Bitstream x
  * @param [in] *by\n
