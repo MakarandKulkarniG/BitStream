@@ -67,9 +67,11 @@ uint16_t BitStreamPutByte(BitStream* bs, uint8_t byte, uint16_t offset,
 uint16_t BitStreamGetByte(BitStream *bs, uint8_t *byte, uint16_t offset, 
 		uint16_t nbits) ;
 
-uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) ;
+uint16_t BitStreamCopy(BitStream* bs, uint8_t* inp, uint16_t nbits) ;
 
-uint16_t BitStreamFillAscii(BitStream* bs, const char* inp) ;
+uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) ;
+
+uint16_t BitStreamFill(BitStream* bs, uint8_t byte) ;
 
 BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) ;
 #endif /* _BITSTREAM_H */

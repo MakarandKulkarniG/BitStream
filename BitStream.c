@@ -14,8 +14,9 @@
  *           BitStreamGetByte
  *           BitStreamPutBits
  *           BitStreamGetBits
+ *	     BitStreamCopy
+ *	     BitStreamCopyAscii
  *	     BitStreamFill
- *	     BitStreamFillAscii
  *	     BitStreamHex2Base64
  *	     BitStreamExclusiveOr
  *
@@ -104,7 +105,7 @@ BitStream* BitStreamCreate(uint16_t nbits) {
    if (bs != NULL) { 
 
       if (nbits) {
-        bs->array = (uint8_t *)malloc((nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE);
+        bs->array = (uint8_t*)malloc((nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE);
         if (NULL == bs->array) {
           free(bs);
           bs = NULL;
@@ -135,7 +136,7 @@ BitStream* BitStreamCreateAscii(const char* s) {
 
    bs = BitStreamCreate(0); /* Empty container */
 
-   if (BitStreamFillAscii(bs, s) <= 0) {
+   if (BitStreamCopyAscii(bs, s) <= 0) {
 	   BitStreamDelete(bs);
 	   bs = NULL;
    }
@@ -206,7 +207,8 @@ void BitStreamDelete(BitStream* bs) {
 /**
  * @ingroup BitStream
  * @fn void BitSreamShow(BitStream* bs, const char* fmt)
- * @brief Show contents of bit stream as hex array
+ * @brief Show contents of bit stream as hex array in "pretty" format 
+ * 	prints both ascii and hex values helpful in debugging
  *
  * @param [in]	bs\n
  *  	pointer to bitstream to show
@@ -215,19 +217,30 @@ void BitStreamDelete(BitStream* bs) {
 void BitStreamShow(BitStream* bs) {
    uint16_t i = 0;
 
+   char repr[32] = {'\0'};
+
    if (bs != NULL && bs->array != NULL) {
       printf("%03d\t", i);
       for (i = 0; i < (bs->nbits + BITS_PER_BYTE - 1)/BITS_PER_BYTE; i++) {
-         if ((i != 0) && (i % 4 == 0))
-		 printf("  ");
+
          if ((i != 0) && (i % 8 == 0))
-		 printf("\n%03d\t", i);
+		 printf("  ");
+         if ((i != 0) && (i % 16 == 0)) 
+		 printf("%s\n%03d\t", repr, i);
+
+         sprintf(repr + (i % 16),"%c", isascii(bs->array[i]) ? bs->array[i] : 
+			 '.');
          printf("%02x ", bs->array[i]);
       }
-      printf("\n");
-   } else {
-      printf("NULL!\n");
-   }
+      /* Now print the remaining gap till the place holder for ascii
+       */
+      while (i++ % 16) {
+         if ((i != 0) && (i % 8 == 0))
+	    printf("  ");
+	 printf("   ");
+      }
+      printf("%s\n", repr); /* push out the left over characters from loop */
+   } 
 }
 
 /**
@@ -351,9 +364,9 @@ uint16_t BitStreamGetByte(BitStream *bs, uint8_t *byte, uint16_t offset,
 
 /**
  * @ingroup BitStream
- * @fn uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) 
+ * @fn uint16_t BitStreamCopy(BitStream* bs, uint8_t* inp, uint16_t nbits) 
  *
- * @brief fills the bytes from input buffer into bit stream
+ * @brief Copies the bytes from input buffer into bit stream
  *
  * @param [in,out] bs\n
  * 	bit stream to fill data in
@@ -363,7 +376,7 @@ uint16_t BitStreamGetByte(BitStream *bs, uint8_t *byte, uint16_t offset,
  * 	size of input data in bits
  * @returns number of bits copied into bit stream
  */
-uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) {
+uint16_t BitStreamCopy(BitStream* bs, uint8_t* inp, uint16_t nbits) {
    uint16_t bitsCopied = 0;
    
    while (bitsCopied < bs->nbits) {
@@ -375,7 +388,28 @@ uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) {
 
 /**
  * @ingroup BitStream
- * @fn uint16_t BitStreamFillAscii(BitStream* bs, uint8_t* inp)
+ * @fn uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) 
+ *
+ * @brief Fills the byte into bit stream
+ *
+ * @param [in,out] bs\n
+ * 	bit stream to fill data in
+ * @param [in] byte\n
+ * 	byte to be copied in the bitstream
+ * @returns number of bits copied into bit stream
+ */
+uint16_t BitStreamFill(BitStream* bs, uint8_t byte) {
+   uint16_t bitsCopied = 0;
+   
+   while (bitsCopied < bs->nbits) {
+      bitsCopied += BitStreamPutByte(bs, byte, bitsCopied, BITS_PER_BYTE);
+   }
+
+   return bitsCopied;
+}
+/**
+ * @ingroup BitStream
+ * @fn uint16_t BitStreamCopyAscii(BitStream* bs, uint8_t* inp)
  *
  * @brief fills the bytes from input HEX ascii buffer into bit stream
  *
@@ -385,7 +419,7 @@ uint16_t BitStreamFill(BitStream* bs, uint8_t* inp, uint16_t nbits) {
  * 	pointer to the data to be copied
  * @returns number of bits copied into bit stream
  */
-uint16_t BitStreamFillAscii(BitStream* bs, const char* inp) {
+uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) {
    
    uint16_t size = (strlen(inp) + 1) >> 1;
 
@@ -434,7 +468,7 @@ uint16_t BitStreamFillAscii(BitStream* bs, const char* inp) {
  *   	Bitstream y
  * @returns Pointer to object of type BitStream holding the result of xor 
  * 	operation explained above
- * TODO: roll over as mentioned above is not yet implemented 
+ * @FIXME: roll over as mentioned above is not yet implemented 
  */
 BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) {
    BitStream* bz = NULL;
