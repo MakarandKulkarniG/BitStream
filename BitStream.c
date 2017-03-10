@@ -234,11 +234,15 @@ void BitStreamShow(BitStream* bs) {
       }
       /* Now print the remaining gap till the place holder for ascii
        */
-      while (i++ % 16) {
-         if ((i != 0) && (i % 8 == 0))
-	    printf("  ");
-	 printf("   ");
-      }
+      if (strlen(repr) < 16) {
+         while (i++ % 16) {
+	    printf("   ");
+            if ((i != 0) && (i % 8 == 0))
+	       printf("  ");
+         }
+      } else {
+	   printf("  ");
+      } /* if strlen(repr) < 16 */
       printf("%s\n", repr); /* push out the left over characters from loop */
    } 
 }
@@ -277,6 +281,11 @@ uint16_t BitStreamPutByte(BitStream* bs, uint8_t byte, uint16_t offset,
 
    DECL_BYTE_OFFSET(i);
    DECL_BITS_OFFSET(j);
+
+   if (offset > bs->nbits)
+	   return 0;
+
+   nbits = MIN(nbits, (bs->nbits - offset));
 
    if (nbits < 8) byte = byte << (BITS_PER_BYTE - nbits);
 
@@ -336,8 +345,10 @@ uint16_t BitStreamGetByte(BitStream *bs, uint8_t *byte, uint16_t offset,
    DECL_BYTE_OFFSET(i);
    DECL_BITS_OFFSET(j);
 
-   if (offset + nbits > bs->nbits)
+   if (offset > bs->nbits)
 	   return (0);
+
+   nbits = MIN(nbits, (bs->nbits - offset));
 
    curBits = MIN((BITS_PER_BYTE - j), nbits);
 
@@ -441,15 +452,43 @@ uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) {
  * 	pointer to HEX ascii bit stream for conversion
  * @returns pointer to Base64 bit stream converted from input, NULL in case of
  * 	any error
- *
- * BitStream* BitStreamHex2Base64(BitStream *bs) {
- *
- * BitStream* out = NULL;
- *
- * return out;
- * }
  */
+BitStream* BitStreamHex2Base64(BitStream *bs) {
+   BitStream* out    = NULL;
+   uint16_t   outset = 0;  /* portmanteau of out offset -:) */
+   uint16_t   offset = 0;
+   uint8_t    byte   = 0;
 
+   if (bs) {
+      out = BitStreamCreate((bs->nbits * 4)/3);
+      while (out != NULL && BitStreamGetByte(bs, &byte, offset, 6) > 0) {
+   	   switch (byte) {
+   	   case 0 ... 25:
+   		   byte = 'A' + (byte - 0U);
+   		   break;
+   	   case 26 ... 51:
+		   byte = 'a' + (byte - 26);
+   		   break;
+   	   case 52 ... 61:
+		   byte = '0' + (byte - 52);
+   		   break;
+   	   case 62: 
+		   byte = '+';
+   		   break;
+   	   case 63:
+		   byte = '/';
+   		   break;
+   	   default: 
+		   byte = '?';
+   	   }
+	   if (BitStreamPutByte(out, byte, outset, BITS_PER_BYTE) <= 0)
+		   break;
+	   outset += BITS_PER_BYTE;
+   	   offset += 6;
+      }
+   }
+   return out;
+}
 
 /**
  * @ingroup BitStream

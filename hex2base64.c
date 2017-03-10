@@ -22,34 +22,19 @@
  *    
  */
 int main() {
-   BitStream* bs   = NULL;
+   BitStream *hex, *base64;
    uint16_t offset = 0;
-   uint8_t byte    = 0;
+   uint8_t  byte = 0;
 
-   if ((bs = BitStreamCreateAscii("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")) != NULL) {
-      while (BitStreamGetByte(bs, &byte, offset, 6) > 0) {
-   	   switch (byte) {
-   	   case 0 ... 25:
-   		   printf("%c", 'A'+byte);
-   		   break;
-   	   case 26 ... 51:
-   		   printf("%c", 'a'+(byte-26));
-   		   break;
-   	   case 52 ... 61:
-   		   printf("%c", '0'+(byte-52));
-   		   break;
-   	   case 62: 
-   		   printf("+");
-   		   break;
-   	   case 63:
-   		   printf("/");
-   		   break;
-   	   default: 
-   		   printf("?");
-   	   }
-   	   offset += 6;
-      }
+   if ((hex = BitStreamCreateAscii("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")) != NULL) {
+      base64 = BitStreamHex2Base64(hex);
+      BitStreamShow(hex);
+      printf("\n");
+      if (base64 != NULL) 
+	      BitStreamShow(base64);
+
+      BitStreamDelete(hex);
+      BitStreamDelete(base64);
    }
-   printf("\n");
    return 0;
 }

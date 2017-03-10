@@ -73,5 +73,7 @@ uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) ;
 
 uint16_t BitStreamFill(BitStream* bs, uint8_t byte) ;
 
+BitStream* BitStreamHex2Base64(BitStream *bs) ;
+
 BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) ;
 #endif /* _BITSTREAM_H */

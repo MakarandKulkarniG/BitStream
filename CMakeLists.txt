@@ -5,3 +5,6 @@ add_executable(hex2base64 hex2base64.c
 
 add_executable(xor xor.c
 	BitStream.c)
+
+add_executable(singlebytexor singlebytexor.c
+	BitStream.c)
