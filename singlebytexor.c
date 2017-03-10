@@ -26,7 +26,6 @@ int main() {
    uint16_t offset = 0;
    uint8_t  byte = 0;
    BitStream* key;
-   uint8_t *freq = "ETAOIN SHRDLU";
 
    int 	    i;
    cipher = BitStreamCreateAscii("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
@@ -34,11 +33,10 @@ int main() {
    if (cipher) {
      BitStreamShow(cipher);
      
-     for (i = 0; i < strlen(freq) - 1; i++) {
+     for (i = 0; i < 255; i++) {
 	key = BitStreamCreate(BITS_PER_BYTE);
 	if (key) {
-	   BitStreamPutByte(key, freq[i], 0, BITS_PER_BYTE);
-	   BitStreamShow(key);
+	   BitStreamPutByte(key, i, 0, BITS_PER_BYTE);
 	   
            clear = BitStreamExclusiveOr(cipher, key);
 	   BitStreamShow(clear);

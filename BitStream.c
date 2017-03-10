@@ -228,7 +228,7 @@ void BitStreamShow(BitStream* bs) {
          if ((i != 0) && (i % 16 == 0)) 
 		 printf("%s\n%03d\t", repr, i);
 
-         sprintf(repr + (i % 16),"%c", isascii(bs->array[i]) ? bs->array[i] : 
+         sprintf(repr + (i % 16),"%c", isprint(bs->array[i]) ? bs->array[i] : 
 			 '.');
          printf("%02x ", bs->array[i]);
       }
@@ -245,6 +245,7 @@ void BitStreamShow(BitStream* bs) {
       } /* if strlen(repr) < 16 */
       printf("%s\n", repr); /* push out the left over characters from loop */
    } 
+   printf("\n");
 }
 
 /**
@@ -522,9 +523,14 @@ BitStream* BitStreamExclusiveOr(BitStream *bx, BitStream *by) {
       bz = BitStreamCreate(bx->nbits);
       if (bz) {
          while (BitStreamGetByte(bx, &bytex, offsetx, BITS_PER_BYTE) > 0) {
-            if (BitStreamGetByte(by, &bytey, offsety, BITS_PER_BYTE) > 0) {
-               BitStreamPutByte(bz, bytex^bytey, offsetx, BITS_PER_BYTE);
-            }
+            /* this can be replaced by BitStreamGetByteCirc
+	     */
+            if (BitStreamGetByte(by, &bytey, offsety, BITS_PER_BYTE) <= 0) {
+		offsety = 0;
+		BitStreamGetByte(by, &bytey, offsety, BITS_PER_BYTE) ;
+	    }
+            BitStreamPutByte(bz, bytex^bytey, offsetx, BITS_PER_BYTE);
+	       
 	    offsetx += BITS_PER_BYTE;
 	    offsety += BITS_PER_BYTE;
          }
