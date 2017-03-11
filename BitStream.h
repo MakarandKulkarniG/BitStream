@@ -59,6 +59,8 @@ uint8_t* BitStreamGetArray(BitStream *bs) ;
 
 BitStream* BitStreamCreate(uint16_t nbits) ;
 
+BitStream* BitStreamCreateHex(const char* s) ;
+
 BitStream* BitStreamCreateAscii(const char* s) ;
 
 void BitStreamDelete(BitStream* bs) ;
@@ -72,6 +74,8 @@ uint16_t BitStreamGetByte(BitStream *bs, uint8_t *byte, uint16_t offset,
 		uint16_t nbits) ;
 
 uint16_t BitStreamCopy(BitStream* bs, uint8_t* inp, uint16_t nbits) ;
+
+uint16_t BitStreamCopyHex(BitStream* bs, const char* inp) ;
 
 uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) ;
 

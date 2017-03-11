@@ -26,7 +26,7 @@ int main() {
    uint16_t offset = 0;
    uint8_t  byte = 0;
 
-   if ((hex = BitStreamCreateAscii("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")) != NULL) {
+   if ((hex = BitStreamCreateHex("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")) != NULL) {
       base64 = BitStreamHex2Base64(hex);
       BitStreamShow(hex);
       printf("\n");

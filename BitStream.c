@@ -6,6 +6,7 @@
  * @author Makarand Kulkarni
  * 
  * @internal BitStreamCreate
+ * 	     BitStreamCreateHex
  * 	     BitStreamCreateAscii
  *           BitStreamDelete
  *           BitStreamRealloc
@@ -15,6 +16,7 @@
  *           BitStreamPutBits
  *           BitStreamGetBits
  *	     BitStreamCopy
+ *	     BitStreamCopyHex
  *	     BitStreamCopyAscii
  *	     BitStreamFill
  *	     BitStreamHex2Base64
@@ -150,12 +152,36 @@ BitStream* BitStreamCreate(uint16_t nbits) {
 
 /**
  * @ingroup Bitstream
+ * @fn BitStream* BitStreamCreateHex(const char* s)
+ * @brief Creates a object of type BitStream and allocates space to hold the
+ * 	HEX byte array passed as argument. The hex byte array in ASCII format
+ * 	is converted to HEX byte array, for instance, "deadbeef" (len 8 bytes)
+ * 	is stored as 0xdeadbeef (length 4 bytes)
+ *
+ * @param [in] s\n
+ * 	HEX buffer string that is filled in the newly allocated BitStream
+ * @returns pointer to newly created bit stream object, NULL on failure
+ */
+BitStream* BitStreamCreateHex(const char* s) {
+   BitStream* bs = NULL;
+
+   bs = BitStreamCreate(0); /* Empty container */
+
+   if (BitStreamCopyHex(bs, s) <= 0) {
+	   BitStreamDelete(bs);
+	   bs = NULL;
+   }
+   return bs;
+}
+
+/**
+ * @ingroup Bitstream
  * @fn BitStream* BitStreamCreateAscii(const char* s)
  * @brief Creates a object of type BitStream and allocates space to hold the
  * 	ASCII byte array passed as argument
  *
  * @param [in] s\n
- * 	ASCII buffer that is filled in the newly allocated BitStream
+ * 	ASCII buffer string that is filled in the newly allocated BitStream
  * @returns pointer to newly created bit stream object, NULL on failure
  */
 BitStream* BitStreamCreateAscii(const char* s) {
@@ -169,7 +195,6 @@ BitStream* BitStreamCreateAscii(const char* s) {
    }
    return bs;
 }
-
 /**
  * @ingroup Bitstream
  *
@@ -257,13 +282,13 @@ void BitStreamShow(BitStream* bs) {
 
          sprintf(repr + (i % 16),"%c", isprint(bs->array[i]) ? bs->array[i] : 
 			 '.');
-         printf("%02x ", bs->array[i]);
+         printf("%02x", bs->array[i]);
       }
       /* Now print the remaining gap till the place holder for ascii
        */
       if (strlen(repr) < 16) {
          while (i++ % 16) {
-	    printf("   ");
+	    printf("  ");
             if ((i != 0) && (i % 8 == 0))
 	       printf("  ");
          }
@@ -448,17 +473,18 @@ uint16_t BitStreamFill(BitStream* bs, uint8_t byte) {
 }
 /**
  * @ingroup BitStream
- * @fn uint16_t BitStreamCopyAscii(BitStream* bs, uint8_t* inp)
+ * @fn uint16_t BitStreamCopyHex(BitStream* bs, uint8_t* inp)
  *
  * @brief fills the bytes from input HEX ascii buffer into bit stream
  *
  * @param [in,out] bs\n
  * 	bit stream to fill data in
  * @param [in] *inp\n
- * 	pointer to the data to be copied
+ * 	pointer to the data to be copied, should be NULL terminated with valid
+ * 	hex charcters, else assert(0)
  * @returns number of bits copied into bit stream
  */
-uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) {
+uint16_t BitStreamCopyHex(BitStream* bs, const char* inp) {
    
    uint16_t size = (strlen(inp) + 1) >> 1;
 
@@ -470,6 +496,30 @@ uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) {
    return size * BITS_PER_BYTE;
 }
 
+/**
+ * @ingroup BitStream
+ * @fn uint16_t BitStreamCopyAscii(BitStream* bs, uint8_t* inp)
+ *
+ * @brief fills the bytes from input ascii buffer into bit stream
+ *
+ * @param [in,out] bs\n
+ * 	bit stream to fill data in, should be NULL terminated
+ * @param [in] *inp\n
+ * 	pointer to the data to be copied
+ * @returns number of bits copied into bit stream
+ */
+uint16_t BitStreamCopyAscii(BitStream* bs, const char* inp) {
+   
+   uint16_t size = strlen(inp);
+   uint16_t bitsCopied = 0;
+
+   if (bs) {
+      BitStreamRealloc(bs, NULL, size * BITS_PER_BYTE);
+      if (bs->array != NULL)
+          bitsCopied = BitStreamCopy(bs, inp, size);
+   }
+   return bitsCopied;
+}
 /**
  * @ingroup BitStream
  * @fn BitStream* BitStreamHex2Base64(BitStream *bs) 

@@ -152,7 +152,7 @@ int main() {
 
    while (fgets(buffer, sizeof(buffer) - 1, fp)) {
      buffer[strlen(buffer) - 1] = '\0';
-     cipher = BitStreamCreateAscii(buffer); 
+     cipher = BitStreamCreateHex(buffer); 
 
      if (cipher) {
         for (i = 53; i < 255; i++) { /* key = 0 means clear text */

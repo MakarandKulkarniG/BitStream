@@ -22,14 +22,15 @@
 int main() {
    BitStream  *bx, *by, *bz;
 
-   bx = BitStreamCreateAscii("1c0111001f010100061a024b53535009181c");
+   bx = BitStreamCreateHex("1c0111001f010100061a024b53535009181c");
 
-   by = BitStreamCreateAscii("686974207468652062756c6c277320657965");
+   by = BitStreamCreateHex("686974207468652062756c6c277320657965");
 
    if (bx && by) {
          bz = BitStreamExclusiveOr(bx, by);
 
-         BitStreamShow(bz);
+	 if (bz)
+            BitStreamShow(bz);
    } /* if (bx && by) */
 
    BitStreamDelete(bx);
